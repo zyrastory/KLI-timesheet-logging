@@ -1,0 +1,186 @@
+function getWorkingDays(yearMonth) {
+    const [year, month] = yearMonth.split('.').map(Number);
+    const arr = [];
+
+    let date = new Date(year, month - 1, 1);
+
+    while (date.getMonth() === month - 1) {
+        const dayOfWeek = date.getDay();
+
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+            const formattedDate = date.getFullYear() + '/' +
+                                  String(date.getMonth() + 1).padStart(2, '0') + '/' +
+                                  String(date.getDate()).padStart(2, '0');
+            arr.push(formattedDate);
+        }
+
+        date.setDate(date.getDate() + 1);
+    }
+
+    return arr;
+}
+
+var f = $('.bi-single.bi-iframe.bi-card:visible')[0].contentDocument;
+//動作設定
+var mousedownEvent = new MouseEvent('mousedown', {
+	bubbles: true,
+	cancelable: true,
+	view: window
+});
+var mouseupEvent = new MouseEvent('mouseup', {
+	bubbles: true,
+	cancelable: true,
+	view: window
+});
+var keydownEvent = new KeyboardEvent('keydown', {
+	bubbles: true,
+	cancelable: true,
+	key: 'Enter',
+	code: 'Enter',
+	keyCode: 13,
+	charCode: 13,
+	which: 13
+});
+
+//非同步function
+function getPRJName(){
+ return new Promise((resolve) => {
+	var element = $(f).find('.fr-trigger-center')[0];
+
+
+	element.dispatchEvent(mousedownEvent);
+	element.dispatchEvent(mouseupEvent);
+	
+	var prjName = $(f).find('.fr-combo-list')[0].innerText;
+	
+	if(prjName==="正在載入"){
+		setTimeout(function() {
+			 getPRJName(f).then(resolve);
+		}, 300);
+	}
+	else{
+		resolve(prjName);
+	}
+  });
+}
+
+function getObjName(){
+ return new Promise((resolve) => {
+	var element = $(f).find('.fr-trigger-center')[1];
+
+
+	element.dispatchEvent(mousedownEvent);
+	element.dispatchEvent(mouseupEvent);
+		
+	var objList = $(f).find('.fr-combo-list')[1];
+	var items = $(objList).find('.fr-combo-list-item');
+	var objName = "";
+		
+	if(items.length === 0){
+		setTimeout(function() {
+			 getObjName(f).then(resolve);
+		}, 300);
+	}
+	else{
+		items.each(function(){ 
+			if(this.innerText.startsWith('PG')){
+				resolve(this.innerText);
+			}
+		});
+		resolve(items[0].innerText);
+	}
+  });
+}
+
+async function getPRJNameAsync() {
+    try {
+        const result = await getPRJName();
+		return result;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function getOBJNameAsync() {
+    try {
+        const result = await getObjName();
+		return result;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+//新增行數
+function addRows(cnt) {
+	var addBtn = $(f).find('.fr-btn-text.x-emb-add')[0];
+    let i = 0;
+    const intervalId = setInterval(() => {
+        addBtn.click();
+        i++;
+        if (i+1 == cnt) {
+            clearInterval(intervalId);
+        }
+    }, 400);
+}
+
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+/*
+以上為呼叫用Function
+*/
+
+var yearMonth = '2024.08';	//改月份
+var workingDays = getWorkingDays(yearMonth);
+
+addRows(workingDays.length);		
+await wait(workingDays.length*600);	
+
+getPRJNameAsync()
+.then(prjName => {
+	var dels = $(f).find('tr:visible div .fr-btn-text.x-emb-delete');
+	dels.each(function(index){
+		const tr = this.closest('tr');
+		var text = $(tr).find('.fr-trigger-texteditor')[0];
+		text.value = prjName;
+		
+		//角色顯示相關
+		text.focus();
+		text.dispatchEvent(keydownEvent);
+		
+		//日期
+		var date = $(tr).find('.fr-trigger-texteditor')[1];
+		date.value = workingDays[index];
+		date.focus();
+		date.dispatchEvent(keydownEvent);
+		
+		//時間
+		let time = $(tr).find('.fr-texteditor')[0];
+		time.value = "8"
+		
+		time.focus();
+
+		time.dispatchEvent(keydownEvent);
+		
+	});
+})
+.catch(error => {
+	console.error('Error:', error);
+});
+
+getOBJNameAsync()
+.then(objName => {
+	var dels = $(f).find('tr:visible div .fr-btn-text.x-emb-delete');
+	dels.each(function(){
+		const tr = this.closest('tr');
+		var text = $(tr).find('.fr-trigger-texteditor')[2];
+		text.value = objName;
+		
+		text.focus();
+		text.dispatchEvent(keydownEvent);
+	});
+
+}).catch(error => {
+	console.error('Error:', error);
+});
+
